@@ -1,0 +1,96 @@
+name: Recipe Request
+description: Request a new migration recipe for an AVM module.
+labels: [recipe-request]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for requesting a new migration recipe!
+        
+        **Before submitting**: Check [available recipes](https://github.com/infra-at-scale/avm-openrewrite-migrations/blob/main/CHANGELOG.md#features) to ensure we don't already support this migration.
+
+  - type: input
+    id: avm-module
+    attributes:
+      label: AVM Module name
+      description: Which Azure Verified Module do you need migrated?
+      placeholder: |
+        Example:
+        - avm-res-network-virtualnetwork
+        - avm-res-storage-storageaccount
+        - avm-res-compute-virtualmachine
+    validations:
+      required: true
+
+  - type: input
+    id: version-from
+    attributes:
+      label: From version
+      description: Current module version you're using.
+      placeholder: "0.10.0 or 0.10.x"
+    validations:
+      required: true
+
+  - type: input
+    id: version-to
+    attributes:
+      label: To version
+      description: Target module version to migrate to.
+      placeholder: "0.11.0 or 0.11.x"
+    validations:
+      required: true
+
+  - type: textarea
+    id: breaking-changes
+    attributes:
+      label: Breaking changes between versions
+      description: Describe what changed between the two versions (removed inputs, renamed parameters, new required fields, etc.).
+      placeholder: |
+        Example:
+        - `resource_group_name` input removed
+        - `parent_id` input added (required)
+        - Module output structure changed
+    validations:
+      required: true
+
+  - type: input
+    id: avm-release-link
+    attributes:
+      label: AVM Module Release Notes
+      description: Link to the GitHub release or documentation describing the changes.
+      placeholder: "https://github.com/Azure/terraform-azurerm-avm-res-.../releases/tag/v0.11.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: example-tf
+    attributes:
+      label: Example OpenTofu/Terraform configuration
+      description: Provide a sample of your current OpenTofu/Terraform code using this module.
+      placeholder: |
+        ```hcl
+        module "example" {
+          source  = "Azure/avm-res-network-virtualnetwork/azurerm"
+          version = "~> 0.10.0"
+          
+          resource_group_name = azurerm_resource_group.example.name
+          location            = azurerm_resource_group.example.location
+          address_space       = ["10.0.0.0/16"]
+        }
+        ```
+    validations:
+      required: false
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Why is this recipe important?
+      description: Explain your use case and why this migration recipe would be helpful.
+      placeholder: |
+        Example:
+        - We need to migrate 50+ repositories using this module
+        - This is blocking our infrastructure upgrade
+    validations:
+      required: true

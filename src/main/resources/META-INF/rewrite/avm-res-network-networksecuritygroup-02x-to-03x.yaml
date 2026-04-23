@@ -1,0 +1,26 @@
+---
+# More information about breaking changes for the 0.3.0 release can be found at:
+# https://github.com/Azure/terraform-azurerm-avm-res-network-networksecuritygroup/releases/tag/v0.3.0
+#
+# USAGE:
+# ./gradlew rewriteRun \
+#   -Drewrite.activeRecipe=io.oczadly.avm.migrations.res.network.networksecuritygroup.From02xTo03x
+#
+type: specs.openrewrite.org/v1beta/recipe
+name: io.oczadly.avm.migrations.res.network.networksecuritygroup.From02xTo03x
+displayName: avm-res-network-networksecuritygroup 0.2.0 -> 0.3.0
+description: Migrate avm-res-network-networksecuritygroup from 0.2.0 to 0.3.0. Adds Azure Provider v4.0 support while maintaining v3.x compatibility.
+recipeList:
+  # Update AzureRM provider to support v4.0
+  - io.oczadly.openrewrite.hcl.AddProvider:
+      source: "Azure/avm-res-network-networksecuritygroup/azurerm"
+      version: "~> 0.2"
+      providerName: "azurerm"
+      providerSource: "hashicorp/azurerm"
+      providerVersion: ">= 3.71, < 5.0"
+
+  # Update module version from 0.2.x to 0.3.0
+  - io.oczadly.openrewrite.hcl.ChangeModuleVersion:
+      source: "Azure/avm-res-network-networksecuritygroup/azurerm"
+      version: "~> 0.2"
+      newVersion: "~> 0.3"

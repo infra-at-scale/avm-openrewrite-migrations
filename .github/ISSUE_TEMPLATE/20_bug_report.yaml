@@ -1,5 +1,5 @@
 name: Bug Report
-description: Report a reproducible bug to help improve the plugin.
+description: Report a reproducible bug in avm-openrewrite-migrations.
 labels: [bug]
 assignees: []
 
@@ -19,12 +19,24 @@ body:
       required: true
 
   - type: textarea
+    id: recipe-used
+    attributes:
+      label: Which recipe were you using?
+      description: Provide the recipe name or YAML file.
+      placeholder: |
+        Example:
+        - io.oczadly.avm.migrations.res.network.virtualnetwork.From010xTo011x
+        - avm-res-network-privatednszone-03x-to-04x.yaml
+    validations:
+      required: true
+
+  - type: textarea
     id: reproduction-steps
     attributes:
       label: Steps to reproduce
       description: Provide clear steps to reproduce the issue.
       placeholder: |
-        1. Run `gradle build ...`
+        1. Run `./gradlew rewriteDryRun -Drewrite.activeRecipes=io.oczadly.avm.migrations...`
         2. Observe the output
     validations:
       required: true
@@ -44,15 +56,40 @@ body:
       label: Environment
       description: Please provide your environment details.
       placeholder: |
-        - OS: [e.g., macOS 14.5, Windows 11]
+        - OS: [e.g., macOS 14.5, Windows 11, Ubuntu 22.04]
+        - Java version: [e.g., openjdk 11.0.20]
+        - Gradle version: [e.g., 8.5 (bundled)]
+        - OpenTofu/Terraform version: [e.g., 1.6.0]
     validations:
       required: true
+
+  - type: textarea
+    id: opentofu-config
+    attributes:
+      label: OpenTofu/Terraform configuration (if applicable)
+      description: Paste your OpenTofu/Terraform code that triggers the bug.
+      placeholder: |
+        ```hcl
+        module "vnet" {
+          source  = "Azure/avm-res-network-virtualnetwork/azurerm"
+          version = "~> 0.10.0"
+          ...
+        }
+        ```
+    validations:
+      required: false
 
   - type: textarea
     id: additional-context
     attributes:
       label: Additional context
       description: Add any other context, logs, screenshots, or stack traces about the problem here.
-      placeholder: Screenshots, logs, stack traces...
+      placeholder: |
+        Output from `./gradlew rewriteDryRun`:
+        ```
+        ...
+        ```
+        
+        Or patch file from `build/reports/rewrite/rewrite.patch`
     validations:
       required: false

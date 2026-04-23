@@ -1,0 +1,33 @@
+---
+# More information about breaking changes for the 0.15.x release can be found at:
+# https://github.com/Azure/terraform-azurerm-avm-res-network-virtualnetwork/releases/tag/v0.15.0
+#
+# USAGE:
+# ./gradlew rewriteRun \
+#   -Drewrite.activeRecipe=io.oczadly.avm.migrations.res.network.virtualnetwork.From014xTo015x \
+#   -Davm.vnet.subnet_name='subnet01' # Optional, only if you have IPAM-enabled subnets to migrate
+#
+type: specs.openrewrite.org/v1beta/recipe
+name: io.oczadly.avm.migrations.res.network.virtualnetwork.From014xTo015x
+displayName: avm-res-network-virtualnetwork 0.14.x -> 0.15.x
+description: Migrate avm-res-network-virtualnetwork from 0.14.x to 0.15.x
+recipeList:
+  # Switch module version from "~> 0.14.0" to "~> 0.15.0" first:
+  - io.oczadly.openrewrite.hcl.ChangeModuleVersion:
+      source: "Azure/avm-res-network-virtualnetwork/azurerm"
+      version: "~> 0.14.0"
+      newVersion: "~> 0.15.0"
+  # Remove deprecated service_endpoints input (removed in v0.15.0):
+  - io.oczadly.openrewrite.hcl.RemoveModuleInput:
+      source: "Azure/avm-res-network-virtualnetwork/azurerm"
+      version: "~> 0.15.0"
+      inputName: service_endpoints
+  # Optional: Add moved blocks for subnets that use IPAM (if applicable):
+  # Uncomment and adjust the subnet keys to match your actual subnet names in locals/variables.
+  # This creates state migration blocks for IPAM-enabled subnets.
+  # Example for subnet with key "subnet01":
+  # - io.oczadly.openrewrite.hcl.AddMovedBlock:
+  #     source: "Azure/avm-res-network-virtualnetwork/azurerm"
+  #     version: "~> 0.15.0"
+  #     from: module.vnet.module.subnet["${avm.vnet.subnet_name:subnet01}"].azapi_resource.subnet
+  #     to: module.vnet.module.subnet["${avm.vnet.subnet_name:subnet01}"].azapi_resource.subnet_ipam[0]

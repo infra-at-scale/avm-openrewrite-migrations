@@ -1,0 +1,26 @@
+---
+# More information about breaking changes for the 0.6.5 release can be found at:
+# https://github.com/Azure/terraform-azurerm-avm-res-storage-storageaccount/releases/tag/v0.6.5
+#
+# USAGE:
+# ./gradlew rewriteRun \
+#   -Drewrite.activeRecipe=io.oczadly.avm.migrations.res.storage.storageaccount.From064To065
+#
+type: specs.openrewrite.org/v1beta/recipe
+name: io.oczadly.avm.migrations.res.storage.storageaccount.From064To065
+displayName: avm-res-storage-storageaccount 0.6.4 -> 0.6.5
+description: Migrate avm-res-storage-storageaccount from 0.6.4 to 0.6.5. Adds local_user_enabled variable and updates AzureRM provider minimum to 4.37.0.
+recipeList:
+  # Update AzureRM provider minimum version requirement
+  - io.oczadly.openrewrite.hcl.AddProvider:
+      source: "Azure/avm-res-storage-storageaccount/azurerm"
+      version: "~> 0.6"
+      providerName: "azurerm"
+      providerSource: "hashicorp/azurerm"
+      providerVersion: ">= 4.37.0, < 5.0"
+
+  # Update module version from 0.6.4 to 0.6.5
+  - io.oczadly.openrewrite.hcl.ChangeModuleVersion:
+      source: "Azure/avm-res-storage-storageaccount/azurerm"
+      version: "~> 0.6"
+      newVersion: "~> 0.6"

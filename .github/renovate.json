@@ -1,5 +1,5 @@
 {
   "extends": [
-    "local>paweloczadly/renovate-config//renovate/01-commons"
+    "local>paweloczadly/renovate-config//renovate/02-gradle"
   ]
 }

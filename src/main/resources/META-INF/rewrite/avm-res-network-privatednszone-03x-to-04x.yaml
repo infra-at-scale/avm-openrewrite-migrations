@@ -1,0 +1,215 @@
+---
+# More information about breaking changes for the 0.4.0 release can be found at:
+# https://github.com/Azure/terraform-azurerm-avm-res-network-privatednszone/releases/tag/v0.4.0
+#
+# USAGE:
+# ./gradlew rewriteRun \
+#   -Drewrite.activeRecipe=io.oczadly.avm.migrations.res.network.privatednszone.From03xTo04x \
+#   -Davm.pdns.module_name="private_dns_zones" \
+#   -Davm.pdns.subscription_id="Your Azure subscription ID" \
+#   -Davm.pdns.resource_group_name="Your resource group name" \
+#   -Davm.pdns.private_dns_zone_name="Your private DNS zone name" \
+#   -Davm.pdns.virtual_network_link_name="Your vnet link name" \
+#   -Davm.pdns.role_assignment_id="Your role assignment ID"
+#
+# MANUAL FIXES NEEDED:
+# "my_key1" is a placeholder for your actual keys from locals.tf.
+# Replace with actual key names (e.g., vnetlink1 for Virtual Network Links, a_record1 for A records, etc.)
+# Reference: https://github.com/Azure/terraform-azurerm-avm-res-network-privatednszone/blob/v0.4.0/examples/default/locals.tf
+#
+type: specs.openrewrite.org/v1beta/recipe
+name: io.oczadly.avm.migrations.res.network.privatednszone.From03xTo04x
+displayName: avm-res-network-privatednszone 0.3.x -> 0.4.0
+description: Migrate avm-res-network-privatednszone from 0.3.x to 0.4.0. Handles module version upgrade, removal of deprecated inputs, and addition of removed/import blocks for resource state migration.
+recipeList:
+  # Add azapi and modtm providers to provider block.
+  # Keep the pre-upgrade version here: AddProvider uses a scanning phase that matches
+  # the original module block before ChangeModuleVersion has rewritten it.
+  - io.oczadly.openrewrite.hcl.AddProvider:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.3.5"
+      providerName: "azapi"
+      providerSource: "azure/azapi"
+      providerVersion: "~> 2.5.0"
+  - io.oczadly.openrewrite.hcl.AddProvider:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.3.5"
+      providerName: "modtm"
+      providerSource: "azure/modtm"
+      providerVersion: "~> 0.3.5"
+  # Switch module version from "~> 0.3.x" to "~> 0.4.0" first:
+  - io.oczadly.openrewrite.hcl.ChangeModuleVersion:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.3.5"
+      newVersion: "~> 0.4.0"
+  # Convert txt_records values from string to list of strings:
+  - io.oczadly.openrewrite.hcl.ConvertLocalValueInPath:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      localName: txt_records
+      attributePath: "*.records.*.value"
+      transformation: stringToList
+  # Remove deprecated root module input (if it exists in your configuration):
+  - io.oczadly.openrewrite.hcl.RemoveModuleInput:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      inputName: resource_group_name
+  - io.oczadly.openrewrite.hcl.AddModuleInput:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      inputName: parent_id
+      inputValue: "${azurerm_resource_group.avmrg.id}"
+  # Remove Block for Private DNS Zones:
+  - io.oczadly.openrewrite.hcl.AddRemovedBlock:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      from: module.${avm.pdns.module_name:private_dns_zones}.azurerm_private_dns_zone.this
+      lifecycleDestroy: false
+  # Remove Block for Private DNS Zone Links:
+  - io.oczadly.openrewrite.hcl.AddRemovedBlock:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      from: module.${avm.pdns.module_name:private_dns_zones}.azurerm_private_dns_zone_virtual_network_link.this
+      lifecycleDestroy: false
+  # Remove Block for Private DNS Zone Role Assignments:
+  - io.oczadly.openrewrite.hcl.AddRemovedBlock:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      from: module.${avm.pdns.module_name:private_dns_zones}.azurerm_role_assignment.this
+      lifecycleDestroy: false
+  # Remove Blocks for Private DNS Zone Records:
+  - io.oczadly.openrewrite.hcl.AddRemovedBlock:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      from: module.${avm.pdns.module_name:private_dns_zones}.azurerm_private_dns_a_record.this
+      lifecycleDestroy: false
+  - io.oczadly.openrewrite.hcl.AddRemovedBlock:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      from: module.${avm.pdns.module_name:private_dns_zones}.azurerm_private_dns_aaaa_record.this
+      lifecycleDestroy: false
+  - io.oczadly.openrewrite.hcl.AddRemovedBlock:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      from: module.${avm.pdns.module_name:private_dns_zones}.azurerm_private_dns_cname_record.this
+      lifecycleDestroy: false
+  - io.oczadly.openrewrite.hcl.AddRemovedBlock:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      from: module.${avm.pdns.module_name:private_dns_zones}.azurerm_private_dns_ptr_record.this
+      lifecycleDestroy: false
+  - io.oczadly.openrewrite.hcl.AddRemovedBlock:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      from: module.${avm.pdns.module_name:private_dns_zones}.azurerm_private_dns_srv_record.this
+      lifecycleDestroy: false
+  - io.oczadly.openrewrite.hcl.AddRemovedBlock:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      from: module.${avm.pdns.module_name:private_dns_zones}.azurerm_private_dns_txt_record.this
+      lifecycleDestroy: false
+  - io.oczadly.openrewrite.hcl.AddRemovedBlock:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      from: module.${avm.pdns.module_name:private_dns_zones}.azurerm_private_dns_mx_record.this
+      lifecycleDestroy: false
+  # Import Blocks for Private DNS Zone:
+  - io.oczadly.openrewrite.hcl.AddImportBlock:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      to: module.${avm.pdns.module_name:private_dns_zones}.azapi_resource.private_dns_zone
+      id: "/subscriptions/${avm.pdns.subscription_id}/resourceGroups/${avm.pdns.resource_group_name}/providers/Microsoft.Network/privateDnsZones/${avm.pdns.private_dns_zone_name}?api-version=2024-06-01"
+  # Import Blocks for Private DNS Zone Links:
+  - io.oczadly.openrewrite.hcl.AddImportBlock:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      to: module.${avm.pdns.module_name:private_dns_zones}.module.virtual_network_links["vnetlink1"].azapi_resource.private_dns_zone_network_link
+      id: "/subscriptions/${avm.pdns.subscription_id}/resourceGroups/${avm.pdns.resource_group_name}/providers/Microsoft.Network/privateDnsZones/${avm.pdns.private_dns_zone_name}/virtualNetworkLinks/${avm.pdns.virtual_network_link_name_1}?api-version=2024-06-01"
+  - io.oczadly.openrewrite.hcl.AddImportBlock:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      to: module.${avm.pdns.module_name:private_dns_zones}.module.virtual_network_links["vnetlink2"].azapi_resource.private_dns_zone_network_link
+      id: "/subscriptions/${avm.pdns.subscription_id}/resourceGroups/${avm.pdns.resource_group_name}/providers/Microsoft.Network/privateDnsZones/${avm.pdns.private_dns_zone_name}/virtualNetworkLinks/${avm.pdns.virtual_network_link_name_2}?api-version=2024-06-01"
+  # Import Blocks for Private DNS Zone Role Assignments:
+  - io.oczadly.openrewrite.hcl.AddImportBlock:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      to: module.${avm.pdns.module_name:private_dns_zones}.azapi_resource.role_assignments["role_assignment_1"]
+      id: "/subscriptions/${avm.pdns.subscription_id}/resourceGroups/${avm.pdns.resource_group_name}/providers/Microsoft.Network/privateDnsZones/${avm.pdns.private_dns_zone_name}/providers/Microsoft.Authorization/roleAssignments/${avm.pdns.role_assignment_id}?api-version=2022-04-01"
+  # Import Blocks for Private DNS Zone A Records:
+  - io.oczadly.openrewrite.hcl.AddImportBlock:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      to: module.${avm.pdns.module_name:private_dns_zones}.module.a_record["a_record1"].azapi_resource.a_record
+      id: "/subscriptions/${avm.pdns.subscription_id}/resourceGroups/${avm.pdns.resource_group_name}/providers/Microsoft.Network/privateDnsZones/${avm.pdns.private_dns_zone_name}/A/${avm.pdns.a_record_name_1}?api-version=2024-06-01"
+  - io.oczadly.openrewrite.hcl.AddImportBlock:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      to: module.${avm.pdns.module_name:private_dns_zones}.module.a_record["a_record2"].azapi_resource.a_record
+      id: "/subscriptions/${avm.pdns.subscription_id}/resourceGroups/${avm.pdns.resource_group_name}/providers/Microsoft.Network/privateDnsZones/${avm.pdns.private_dns_zone_name}/A/${avm.pdns.a_record_name_2}?api-version=2024-06-01"
+  # Import Blocks for Private DNS Zone AAAA Records:
+  - io.oczadly.openrewrite.hcl.AddImportBlock:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      to: module.${avm.pdns.module_name:private_dns_zones}.module.aaaa_record["aaaa_record1"].azapi_resource.aaaa_record
+      id: "/subscriptions/${avm.pdns.subscription_id}/resourceGroups/${avm.pdns.resource_group_name}/providers/Microsoft.Network/privateDnsZones/${avm.pdns.private_dns_zone_name}/AAAA/${avm.pdns.aaaa_record_name_1}?api-version=2024-06-01"
+  - io.oczadly.openrewrite.hcl.AddImportBlock:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      to: module.${avm.pdns.module_name:private_dns_zones}.module.aaaa_record["aaaa_record2"].azapi_resource.aaaa_record
+      id: "/subscriptions/${avm.pdns.subscription_id}/resourceGroups/${avm.pdns.resource_group_name}/providers/Microsoft.Network/privateDnsZones/${avm.pdns.private_dns_zone_name}/AAAA/${avm.pdns.aaaa_record_name_2}?api-version=2024-06-01"
+  # Import Blocks for Private DNS Zone CNAME Records:
+  - io.oczadly.openrewrite.hcl.AddImportBlock:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      to: module.${avm.pdns.module_name:private_dns_zones}.module.cname_record["cname_record1"].azapi_resource.cname_record
+      id: "/subscriptions/${avm.pdns.subscription_id}/resourceGroups/${avm.pdns.resource_group_name}/providers/Microsoft.Network/privateDnsZones/${avm.pdns.private_dns_zone_name}/CNAME/${avm.pdns.cname_record_name_1}?api-version=2024-06-01"
+  - io.oczadly.openrewrite.hcl.AddImportBlock:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      to: module.${avm.pdns.module_name:private_dns_zones}.module.cname_record["cname_record2"].azapi_resource.cname_record
+      id: "/subscriptions/${avm.pdns.subscription_id}/resourceGroups/${avm.pdns.resource_group_name}/providers/Microsoft.Network/privateDnsZones/${avm.pdns.private_dns_zone_name}/CNAME/${avm.pdns.cname_record_name_2}?api-version=2024-06-01"
+  # Import Blocks for Private DNS Zone MX Records:
+  - io.oczadly.openrewrite.hcl.AddImportBlock:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      to: module.${avm.pdns.module_name:private_dns_zones}.module.mx_record["mx_record1"].azapi_resource.mx_record
+      id: "/subscriptions/${avm.pdns.subscription_id}/resourceGroups/${avm.pdns.resource_group_name}/providers/Microsoft.Network/privateDnsZones/${avm.pdns.private_dns_zone_name}/MX/${avm.pdns.mx_record_name_1}?api-version=2024-06-01"
+  - io.oczadly.openrewrite.hcl.AddImportBlock:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      to: module.${avm.pdns.module_name:private_dns_zones}.module.mx_record["msx_record2"].azapi_resource.mx_record
+      id: "/subscriptions/${avm.pdns.subscription_id}/resourceGroups/${avm.pdns.resource_group_name}/providers/Microsoft.Network/privateDnsZones/${avm.pdns.private_dns_zone_name}/MX/${avm.pdns.mx_record_name_2}?api-version=2024-06-01"
+  # Import Blocks for Private DNS Zone PTR Records:
+  - io.oczadly.openrewrite.hcl.AddImportBlock:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      to: module.${avm.pdns.module_name:private_dns_zones}.module.ptr_record["ptr_record1"].azapi_resource.ptr_record
+      id: "/subscriptions/${avm.pdns.subscription_id}/resourceGroups/${avm.pdns.resource_group_name}/providers/Microsoft.Network/privateDnsZones/${avm.pdns.private_dns_zone_name}/PTR/${avm.pdns.ptr_record_name_1}?api-version=2024-06-01"
+  - io.oczadly.openrewrite.hcl.AddImportBlock:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      to: module.${avm.pdns.module_name:private_dns_zones}.module.ptr_record["ptr_record2"].azapi_resource.ptr_record
+      id: "/subscriptions/${avm.pdns.subscription_id}/resourceGroups/${avm.pdns.resource_group_name}/providers/Microsoft.Network/privateDnsZones/${avm.pdns.private_dns_zone_name}/PTR/${avm.pdns.ptr_record_name_2}?api-version=2024-06-01"
+  # Import Blocks for Private DNS Zone SRV Records:
+  - io.oczadly.openrewrite.hcl.AddImportBlock:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      to: module.${avm.pdns.module_name:private_dns_zones}.module.srv_record["srv_record1"].azapi_resource.srv_record
+      id: "/subscriptions/${avm.pdns.subscription_id}/resourceGroups/${avm.pdns.resource_group_name}/providers/Microsoft.Network/privateDnsZones/${avm.pdns.private_dns_zone_name}/SRV/${avm.pdns.srv_record_name_1}?api-version=2024-06-01"
+  - io.oczadly.openrewrite.hcl.AddImportBlock:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      to: module.${avm.pdns.module_name:private_dns_zones}.module.srv_record["srv_record2"].azapi_resource.srv_record
+      id: "/subscriptions/${avm.pdns.subscription_id}/resourceGroups/${avm.pdns.resource_group_name}/providers/Microsoft.Network/privateDnsZones/${avm.pdns.private_dns_zone_name}/SRV/${avm.pdns.srv_record_name_2}?api-version=2024-06-01"
+  # Import Blocks for Private DNS Zone TXT Records:
+  - io.oczadly.openrewrite.hcl.AddImportBlock:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      to: module.${avm.pdns.module_name:private_dns_zones}.module.txt_record["txt_record1"].azapi_resource.txt_record
+      id: "/subscriptions/${avm.pdns.subscription_id}/resourceGroups/${avm.pdns.resource_group_name}/providers/Microsoft.Network/privateDnsZones/${avm.pdns.private_dns_zone_name}/TXT/${avm.pdns.txt_record_name_1}?api-version=2024-06-01"
+  - io.oczadly.openrewrite.hcl.AddImportBlock:
+      source: "Azure/avm-res-network-privatednszone/azurerm"
+      version: "~> 0.4.0"
+      to: module.${avm.pdns.module_name:private_dns_zones}.module.txt_record["txt_record2"].azapi_resource.txt_record
+      id: "/subscriptions/${avm.pdns.subscription_id}/resourceGroups/${avm.pdns.resource_group_name}/providers/Microsoft.Network/privateDnsZones/${avm.pdns.private_dns_zone_name}/TXT/${avm.pdns.txt_record_name_2}?api-version=2024-06-01"

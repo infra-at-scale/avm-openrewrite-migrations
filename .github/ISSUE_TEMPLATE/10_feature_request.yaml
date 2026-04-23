@@ -1,5 +1,5 @@
 name: Feature Request
-description: Suggest a feature or enhancement for the plugin.
+description: Suggest a feature or enhancement for avm-openrewrite-migrations.
 labels: [enhancement]
 assignees: []
 
@@ -14,7 +14,11 @@ body:
     attributes:
       label: What is the feature you would like to propose?
       description: Provide a clear and concise description of the feature or enhancement.
-      placeholder: A clear description of your feature request.
+      placeholder: |
+        Example:
+        - Add validation task to check recipe syntax
+        - Support for custom transformation rules
+        - Better error messages for migration failures
     validations:
       required: true
 

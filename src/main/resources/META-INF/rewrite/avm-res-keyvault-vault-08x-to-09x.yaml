@@ -1,0 +1,25 @@
+---
+# More information about breaking changes for the 0.9.0 release can be found at:
+# https://github.com/Azure/terraform-azurerm-avm-res-keyvault-vault/releases/tag/v0.9.0
+#
+# USAGE:
+# ./gradlew rewriteRun \
+#   -Drewrite.activeRecipe=io.oczadly.avm.migrations.res.keyvault.vault.From08xTo09x
+#
+type: specs.openrewrite.org/v1beta/recipe
+name: io.oczadly.avm.migrations.res.keyvault.vault.From08xTo09x
+displayName: avm-res-keyvault-vault 0.8.x -> 0.9.0+
+description: Migrate avm-res-keyvault-vault from 0.8.x to 0.9.0+ for Azure Provider v4.0 compatibility. Updates module version and AzureRM provider constraint to support v4.0 while maintaining v3.71+ compatibility.
+recipeList:
+  # Update AzureRM provider for v4.0 compatibility
+  - io.oczadly.openrewrite.hcl.AddProvider:
+      source: "Azure/avm-res-keyvault-vault/azurerm"
+      version: "~> 0.8"
+      providerName: "azurerm"
+      providerSource: "hashicorp/azurerm"
+      providerVersion: ">= 3.71, < 5.0"
+  # Update module version from 0.8.x to 0.9.0+
+  - io.oczadly.openrewrite.hcl.ChangeModuleVersion:
+      source: "Azure/avm-res-keyvault-vault/azurerm"
+      version: "~> 0.8.0"
+      newVersion: "~> 0.9.0"
