@@ -24,6 +24,11 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Set up OSS Community Develocity Instance for Gradle
+        uses: gradle/actions/setup-gradle@v6.1.0
+        with:
+          develocity-access-key: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
+
       - name: Validate recipes
         run: ./gradlew rewriteDiscover
         continue-on-error: false
