@@ -33,6 +33,82 @@ jobs:
         run: ./gradlew rewriteDiscover
         continue-on-error: false
 
+  discover-recipe-files:
+    runs-on: ubuntu-latest
+    outputs:
+      recipe-files: ${{ steps.discover.outputs.recipe_files }}
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v6
+
+      - name: Discover recipe files
+        id: discover
+        run: |
+          set -euo pipefail
+          recipe_files=$(find src/main/resources/META-INF/rewrite -maxdepth 1 -type f -name '*.yaml' | sort | jq -R -s -c 'split("\n")[:-1]')
+          echo "recipe_files=${recipe_files}" >> "$GITHUB_OUTPUT"
+
+  test-recipes-on-avm-examples:
+    needs:
+      - validate-recipes
+      - discover-recipe-files
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        recipe-file: ${{ fromJson(needs.discover-recipe-files.outputs.recipe-files) }}
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v6
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Set up Gradle with Develocity
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          develocity-access-key: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
+
+      - name: Prepare report directory
+        id: report-dir
+        run: |
+          set -euo pipefail
+          recipe_id=$(basename "${{ matrix.recipe-file }}" .yaml)
+          report_dir="tmp/reports/${recipe_id}"
+          mkdir -p "$report_dir"
+          echo "recipe_id=${recipe_id}" >> "$GITHUB_OUTPUT"
+          echo "report_dir=${report_dir}" >> "$GITHUB_OUTPUT"
+
+      - name: Run migration regression test for recipe
+        run: |
+          set -euo pipefail
+          ./gradlew test \
+            -DrecipeFile="${{ matrix.recipe-file }}" \
+            -DreportDir="${{ steps.report-dir.outputs.report_dir }}"
+
+      - name: Upload Gradle test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-test-reports-${{ steps.report-dir.outputs.recipe_id }}
+          path: |
+            build/test-results/test
+            build/reports/tests/test
+          retention-days: 30
+
+      - name: Upload recipe regression artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: recipe-regression-${{ steps.report-dir.outputs.recipe_id }}
+          path: ${{ steps.report-dir.outputs.report_dir }}
+          retention-days: 30
+
   check-commit-message:
     runs-on: ubuntu-latest
 

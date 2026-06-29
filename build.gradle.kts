@@ -1,7 +1,10 @@
 plugins {
     id("java-library")
+    id("groovy")
     id("org.openrewrite.rewrite") version "7.28.1"
 }
+
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 
 repositories {
     mavenCentral()
@@ -23,7 +26,61 @@ dependencies {
     Requires `:processResources` to complete before `:rewriteRun`.
     */
     rewrite(sourceSets.main.get().output)
+
+    testImplementation(platform("org.spockframework:spock-bom:2.4-groovy-5.0"))
+    testImplementation("org.spockframework:spock-core")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
+
+tasks.test {
+    useJUnitPlatform()
+    listOf("recipeFile", "reportDir").forEach { key ->
+        System.getProperty(key)?.let { systemProperty(key, it) }
+    }
+}
+
+tasks.withType<Test>().configureEach {
+    testLogging {
+        events("passed", "skipped", "failed", "standardOut", "standardError")
+        showStandardStreams = true
+        exceptionFormat = TestExceptionFormat.FULL
+    }
+}
+
+val allRecipeIntegrationTests = tasks.register("allRecipeIntegrationTests") {
+    group = "verification"
+    description = "Run RecipeIntegrationSpec for all recipe YAML files."
+}
+
+fileTree("src/main/resources/META-INF/rewrite") {
+    include("*.yaml")
+}.files
+    .sortedBy { it.name }
+    .forEach { recipeFile ->
+        val recipeId = recipeFile.nameWithoutExtension
+        val taskSuffix = recipeId.replace(Regex("[^A-Za-z0-9]"), "_")
+        val taskName = "recipeIntegrationTest_${taskSuffix}"
+        val recipePath = recipeFile.relativeTo(projectDir).invariantSeparatorsPath
+        val reportPath = "tmp/reports/${recipeId}"
+
+        val recipeTask = tasks.register<Test>(taskName) {
+            group = "verification"
+            description = "Run RecipeIntegrationSpec for ${recipeFile.name}."
+            useJUnitPlatform()
+            testClassesDirs = sourceSets.test.get().output.classesDirs
+            classpath = sourceSets.test.get().runtimeClasspath
+            filter {
+                includeTestsMatching("io.oczadly.avm.migrations.RecipeIntegrationSpec")
+            }
+            systemProperty("recipeFile", recipePath)
+            systemProperty("reportDir", reportPath)
+            shouldRunAfter(tasks.test)
+        }
+
+        allRecipeIntegrationTests.configure {
+            dependsOn(recipeTask)
+        }
+    }
 
 /*
 PROBLEM: OpenRewrite respects .gitignore patterns and excludes matching paths.
